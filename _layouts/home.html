@@ -1,0 +1,27 @@
+---
+layout: base
+---
+<section class="content-block">
+  {{ content }}
+</section>
+{% assign featured_sections = site.data.home_featured.sections %}
+{% if featured_sections and featured_sections.size > 0 %}
+  {% for section in featured_sections %}
+    <section class="content-block home-preview">
+      <h2>{{ section.title }}</h2>
+      <div class="home-preview__grid">
+        {% for item in section.items %}
+          <article class="home-preview__tile">
+            {% if item.url and item.url != '' %}<a class="home-preview__tile-link" href="{{ item.url | relative_url }}">{% endif %}
+              {% if item.image and item.image != '' %}
+                <img class="home-preview__image" src="{{ item.image | relative_url }}" alt="{{ item.title }}">
+              {% endif %}
+              {% if item.date and item.date != '' %}<div class="home-preview__date">{{ item.date }}</div>{% endif %}
+              <div class="home-preview__title">{{ item.title }}</div>
+            {% if item.url and item.url != '' %}</a>{% endif %}
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endfor %}
+{% endif %}

@@ -1,0 +1,54 @@
+---
+layout: base
+---
+<section class="content-block">
+  <h2>{{ page.title }}</h2>
+  {% assign has_dates = false %}
+  {% for i in page.items %}
+    {% if i.date and i.date != '' %}
+      {% assign has_dates = true %}
+      {% break %}
+    {% endif %}
+  {% endfor %}
+
+  {% for item in page.items %}
+    <article class="list-item">
+      <div class="{% if has_dates %}list-item--with-date{% endif %}">
+        {% if has_dates %}
+          <div class="list-item__date">{{ item.date }}</div>
+        {% endif %}
+        <div class="list-item__content">
+          {% if item.url and item.url != '' %}
+            <h3><a href="{{ item.url | relative_url }}">{{ item.title }}</a></h3>
+          {% else %}
+            <h3>{{ item.title }}</h3>
+          {% endif %}
+          {% if item.image == '' or item.image == nil %}
+            {% if item.excerpt != '' and item.excerpt != nil %}<p>{{ item.excerpt }}</p>{% endif %}
+          {% endif %}
+        </div>
+      </div>
+      {% if item.image and item.image != '' %}
+        <div class="list-item__image">
+          <img src="{{ item.image | relative_url }}" alt="{{ item.title }}">
+        </div>
+      {% endif %}
+    </article>
+  {% endfor %}
+
+  {% if page.total_pages > 1 %}
+  <nav class="pagination">
+    {% if page.prev_url %}<a href="{{ page.prev_url | relative_url }}">Назад</a>{% endif %}
+    {% for page_number in (1..page.total_pages) %}
+      {% if page_number == page.current_page %}
+        <span class="active">{{ page_number }}</span>
+      {% elsif page_number == 1 %}
+        <a href="{{ page.base_url | relative_url }}">{{ page_number }}</a>
+      {% else %}
+        <a href="{{ page.base_url | append: 'page/' | append: page_number | append: '/' | relative_url }}">{{ page_number }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if page.next_url %}<a href="{{ page.next_url | relative_url }}">Вперед</a>{% endif %}
+  </nav>
+  {% endif %}
+</section>

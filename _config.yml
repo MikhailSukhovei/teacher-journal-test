@@ -1,14 +1,7 @@
 title: "Детский национально-этнографический центр «Родина Кузбасса»"
-header_title: "Детский национально-этнографический центр «Родина Кузбасса»<br>МБОУ ДО «Дворец детского творчества» имени Ю.А. Гагарина»<br>Прокопьевский ГО, Кемеровской области – Кузбасс"
+header_title_main: "Детский национально-этнографический центр «Родина Кузбасса»"
+header_title_sub: "МБОУ ДО «Дворец детского творчества» имени Ю.А. Гагарина»"
+footer_text: "Адрес: Прокопьевский ГО, Кемеровской области – Кузбасс<br>Телефон: +7 (999) 999-99-99<br>Электронная почта: 123@mail.ru"
+header_logo: "/assets/images/site-title-logo.jpeg"
 lang: ru
 markdown: kramdown
-collections:
-  news:
-    output: true
-    permalink: /news/:name/
-defaults:
-  - scope:
-      path: ""
-      type: news
-    values:
-      layout: news_item

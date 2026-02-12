@@ -9,7 +9,19 @@
 <body>
   <header class="site-header">
     <div class="site-header__inner">
-      <h1 class="site-title"><a href="{{ '/' | relative_url }}">{% if site.header_title %}{{ site.header_title }}{% else %}{{ site.title }}{% endif %}</a></h1>
+      <h1 class="site-title">
+        <a class="site-title__link" href="{{ '/' | relative_url }}">
+          {% if site.header_logo and site.header_logo != '' %}
+            <img class="site-title__logo" src="{{ site.header_logo | relative_url }}" alt="{{ site.title }}">
+          {% endif %}
+          <span class="site-title__text">
+            <span class="site-title__main">{% if site.header_title_main %}{{ site.header_title_main }}{% else %}{{ site.title }}{% endif %}</span>
+            {% if site.header_title_sub and site.header_title_sub != '' %}
+              <span class="site-title__sub">{{ site.header_title_sub }}</span>
+            {% endif %}
+          </span>
+        </a>
+      </h1>
       <nav>
         <ul class="menu">
           {% for item in site.data.menu %}
@@ -28,5 +40,10 @@
   <main class="page-content">
     {{ content }}
   </main>
+  {% if site.footer_text and site.footer_text != '' %}
+  <footer class="site-footer">
+    <div class="site-footer__inner">{{ site.footer_text }}</div>
+  </footer>
+  {% endif %}
 </body>
 </html>

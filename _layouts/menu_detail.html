@@ -6,9 +6,6 @@ layout: base
   {% assign gallery_images = page.images %}
   {% if gallery_images and gallery_images.size > 0 %}
     <p class="news-hero"><img src="{{ gallery_images[0] | relative_url }}" alt="{{ page.title }}"></p>
-  {% elsif page.image %}
-    <p class="news-hero"><img src="{{ page.image | relative_url }}" alt="{{ page.title }}"></p>
-    {% assign gallery_images = page.image | split: '|' %}
   {% endif %}
   {{ content }}
   {% if gallery_images and gallery_images.size > 0 %}

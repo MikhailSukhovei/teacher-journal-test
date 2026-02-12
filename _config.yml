@@ -1,0 +1,14 @@
+title: "Детский национально-этнографический центр «Родина Кузбасса»"
+header_title: "Детский национально-этнографический центр «Родина Кузбасса»<br>МБОУ ДО «Дворец детского творчества» имени Ю.А. Гагарина»<br>Прокопьевский ГО, Кемеровской области – Кузбасс"
+lang: ru
+markdown: kramdown
+collections:
+  news:
+    output: true
+    permalink: /news/:name/
+defaults:
+  - scope:
+      path: ""
+      type: news
+    values:
+      layout: news_item

@@ -1,0 +1,44 @@
+---
+layout: base
+---
+<section class="content-block">
+  <h2>{{ page.title }}</h2>
+  {% assign gallery_images = page.images %}
+  {% if gallery_images and gallery_images.size > 0 %}
+    <p class="news-hero"><img src="{{ gallery_images[0] | relative_url }}" alt="{{ page.title }}"></p>
+  {% elsif page.image %}
+    <p class="news-hero"><img src="{{ page.image | relative_url }}" alt="{{ page.title }}"></p>
+    {% assign gallery_images = page.image | split: '|' %}
+  {% endif %}
+  {{ content }}
+  {% if gallery_images and gallery_images.size > 0 %}
+    <section class="news-gallery">
+      <div class="news-gallery__header">
+        <strong>Галерея</strong>
+        <div class="news-gallery__controls">
+          <button type="button" class="news-gallery__prev" aria-label="Прокрутить влево">&lt;</button>
+          <button type="button" class="news-gallery__next" aria-label="Прокрутить вправо">&gt;</button>
+        </div>
+      </div>
+      <div class="news-gallery__track">
+        {% for image in gallery_images %}
+          <a class="news-gallery__item" href="{{ image | relative_url }}" target="_blank" rel="noopener">
+            <img src="{{ image | relative_url }}" alt="{{ page.title }} {{ forloop.index }}">
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+    <script>
+      (function () {
+        var gallery = document.currentScript.closest('.news-gallery');
+        if (!gallery) return;
+        var track = gallery.querySelector('.news-gallery__track');
+        var prev = gallery.querySelector('.news-gallery__prev');
+        var next = gallery.querySelector('.news-gallery__next');
+        var step = 260;
+        prev.addEventListener('click', function () { track.scrollBy({ left: -step, behavior: 'smooth' }); });
+        next.addEventListener('click', function () { track.scrollBy({ left: step, behavior: 'smooth' }); });
+      })();
+    </script>
+  {% endif %}
+</section>

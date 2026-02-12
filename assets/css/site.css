@@ -1,0 +1,144 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  color: #111;
+  background: #f7f7f7;
+}
+
+.site-header {
+  background: #fff;
+  border-bottom: 1px solid #ddd;
+}
+
+.site-header__inner,
+.page-content {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.site-title {
+  margin: 0 0 12px;
+}
+
+.site-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.menu {
+  display: flex;
+  gap: 12px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.menu a {
+  text-decoration: none;
+  color: #005ea2;
+  font-weight: 700;
+}
+
+.menu a.active {
+  color: #111;
+}
+
+.content-block {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 20px;
+}
+
+.news-item {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+  border-bottom: 1px solid #e5e5e5;
+  padding: 14px 0;
+}
+
+.news-item:last-child {
+  border-bottom: 0;
+}
+
+.news-item img {
+  max-width: 100%;
+  border-radius: 4px;
+}
+
+.pagination {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.pagination a,
+.pagination span {
+  border: 1px solid #ccc;
+  padding: 6px 10px;
+  text-decoration: none;
+  color: #111;
+}
+
+.pagination .active {
+  background: #111;
+  color: #fff;
+}
+
+.news-hero img {
+  width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  background: #fafafa;
+  border: 1px solid #ddd;
+}
+
+.news-gallery {
+  margin-top: 18px;
+}
+
+.news-gallery__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.news-gallery__controls {
+  display: flex;
+  gap: 8px;
+}
+
+.news-gallery__controls button {
+  border: 1px solid #bbb;
+  background: #fff;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.news-gallery__track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding-bottom: 6px;
+}
+
+.news-gallery__item {
+  flex: 0 0 240px;
+}
+
+.news-gallery__item img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border: 1px solid #ddd;
+}
+
+@media (max-width: 720px) {
+  .news-item {
+    grid-template-columns: 1fr;
+  }
+}

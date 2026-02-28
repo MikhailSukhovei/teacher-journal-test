@@ -35,6 +35,29 @@
           {% endfor %}
         </ul>
       </nav>
+      {% if page.url != '/' %}
+        {% assign breadcrumb_section = nil %}
+        {% for item in site.data.menu %}
+          {% if page.url == item.url %}
+            {% assign breadcrumb_section = item %}
+            {% break %}
+          {% elsif item.url != '/' and page.url contains item.url %}
+            {% assign breadcrumb_section = item %}
+            {% break %}
+          {% endif %}
+        {% endfor %}
+        <div class="breadcrumbs">
+          {% if breadcrumb_section %}
+            <a href="{{ breadcrumb_section.url | relative_url }}">{{ breadcrumb_section.label }}</a>
+            {% if page.url != breadcrumb_section.url %}
+              <span class="breadcrumbs__sep">&gt;</span>
+              <a href="{{ page.url | relative_url }}">{{ page.title }}</a>
+            {% endif %}
+          {% else %}
+            <a href="{{ page.url | relative_url }}">{{ page.title }}</a>
+          {% endif %}
+        </div>
+      {% endif %}
     </div>
   </header>
   <main class="page-content">

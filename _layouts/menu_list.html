@@ -13,26 +13,30 @@ layout: base
 
   {% for item in page.items %}
     <article class="list-item">
-      <div class="{% if has_dates %}list-item--with-date{% endif %}">
-        {% if has_dates %}
-          <div class="list-item__date">{{ item.date }}</div>
-        {% endif %}
-        <div class="list-item__content">
-          {% if item.url and item.url != '' %}
-            <h3><a href="{{ item.url | relative_url }}">{{ item.title }}</a></h3>
-          {% else %}
+      {% if item.url and item.url != '' %}<a class="list-item__link" href="{{ item.url | relative_url }}">{% endif %}
+      <div class="list-item__grid">
+        <div class="{% if has_dates %}list-item--with-date{% endif %}">
+          {% if has_dates %}
+            <div class="list-item__date">{{ item.date }}</div>
+          {% endif %}
+          <div class="list-item__content">
             <h3>{{ item.title }}</h3>
-          {% endif %}
-          {% if item.image == '' or item.image == nil %}
-            {% if item.excerpt != '' and item.excerpt != nil %}<p>{{ item.excerpt }}</p>{% endif %}
-          {% endif %}
+            {% assign show_excerpt = false %}
+            {% if item.url == '' or item.url == nil %}
+              {% assign show_excerpt = true %}
+            {% elsif item.image == '' or item.image == nil %}
+              {% assign show_excerpt = true %}
+            {% endif %}
+            {% if show_excerpt and item.excerpt != '' and item.excerpt != nil %}<p>{{ item.excerpt }}</p>{% endif %}
+          </div>
         </div>
+        {% if item.image and item.image != '' %}
+          <div class="list-item__image">
+            <img src="{{ item.image | relative_url }}" alt="{{ item.title }}">
+          </div>
+        {% endif %}
       </div>
-      {% if item.image and item.image != '' %}
-        <div class="list-item__image">
-          <img src="{{ item.image | relative_url }}" alt="{{ item.title }}">
-        </div>
-      {% endif %}
+      {% if item.url and item.url != '' %}</a>{% endif %}
     </article>
   {% endfor %}
 

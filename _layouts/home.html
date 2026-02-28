@@ -14,7 +14,9 @@ layout: base
           <article class="home-preview__tile">
             {% if item.url and item.url != '' %}<a class="home-preview__tile-link" href="{{ item.url | relative_url }}">{% endif %}
               {% if item.image and item.image != '' %}
-                <img class="home-preview__image" src="{{ item.image | relative_url }}" alt="{{ item.title }}">
+                <div class="home-preview__media">
+                  <img class="home-preview__image" src="{{ item.image | relative_url }}" alt="{{ item.title }}">
+                </div>
               {% endif %}
               {% if item.date and item.date != '' %}<div class="home-preview__date">{{ item.date }}</div>{% endif %}
               <div class="home-preview__title">{{ item.title }}</div>

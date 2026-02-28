@@ -12,29 +12,71 @@ layout: base
     <section class="news-gallery">
       <div class="news-gallery__header">
         <strong>Галерея</strong>
-        <div class="news-gallery__controls">
-          <button type="button" class="news-gallery__prev" aria-label="Прокрутить влево">&lt;</button>
-          <button type="button" class="news-gallery__next" aria-label="Прокрутить вправо">&gt;</button>
-        </div>
       </div>
-      <div class="news-gallery__track">
-        {% for image in gallery_images %}
-          <a class="news-gallery__item" href="{{ image | relative_url }}" target="_blank" rel="noopener">
-            <img src="{{ image | relative_url }}" alt="{{ page.title }} {{ forloop.index }}">
-          </a>
-        {% endfor %}
+      <div class="news-gallery__viewport">
+        <button type="button" class="news-gallery__nav news-gallery__nav--prev" aria-label="Предыдущее изображение"></button>
+        <div class="news-gallery__track">
+          {% for image in gallery_images %}
+            <a class="news-gallery__item" data-index="{{ forloop.index0 }}" href="{{ image | relative_url }}" target="_blank" rel="noopener">
+              <img src="{{ image | relative_url }}" alt="{{ page.title }} {{ forloop.index }}">
+            </a>
+          {% endfor %}
+        </div>
+        <button type="button" class="news-gallery__nav news-gallery__nav--next" aria-label="Следующее изображение"></button>
       </div>
     </section>
     <script>
       (function () {
-        var gallery = document.currentScript.closest('.news-gallery');
-        if (!gallery) return;
-        var track = gallery.querySelector('.news-gallery__track');
-        var prev = gallery.querySelector('.news-gallery__prev');
-        var next = gallery.querySelector('.news-gallery__next');
-        var step = 260;
-        prev.addEventListener('click', function () { track.scrollBy({ left: -step, behavior: 'smooth' }); });
-        next.addEventListener('click', function () { track.scrollBy({ left: step, behavior: 'smooth' }); });
+        function mod(n, m) {
+          return ((n % m) + m) % m;
+        }
+
+        function initGallery(gallery) {
+          if (!gallery || gallery.dataset.carouselReady === '1') return;
+          var slides = Array.prototype.slice.call(gallery.querySelectorAll('.news-gallery__item'));
+          var prev = gallery.querySelector('.news-gallery__nav--prev');
+          var next = gallery.querySelector('.news-gallery__nav--next');
+          if (!slides.length || !prev || !next) return;
+          gallery.dataset.carouselReady = '1';
+          var current = 0;
+
+          function render() {
+          var prevIndex = mod(current - 1, slides.length);
+          var nextIndex = mod(current + 1, slides.length);
+          slides.forEach(function (slide, index) {
+            slide.classList.remove('is-prev', 'is-current', 'is-next');
+            if (index === current) slide.classList.add('is-current');
+              else if (index === prevIndex) slide.classList.add('is-prev');
+            else if (index === nextIndex) slide.classList.add('is-next');
+          });
+        }
+
+          // Mark portrait images so CSS switches to contained mode with white side fields.
+          slides.forEach(function (slide) {
+            var img = slide.querySelector('img');
+            if (!img) return;
+            function setOrientation() {
+              if (img.naturalHeight > img.naturalWidth) slide.classList.add('is-portrait');
+            }
+            if (img.complete) setOrientation();
+            else img.addEventListener('load', setOrientation, { once: true });
+          });
+
+          prev.addEventListener('click', function () {
+            current = mod(current - 1, slides.length);
+            render();
+          });
+
+          next.addEventListener('click', function () {
+            current = mod(current + 1, slides.length);
+            render();
+          });
+
+          render();
+        }
+
+        var galleries = Array.prototype.slice.call(document.querySelectorAll('.news-gallery'));
+        galleries.forEach(initGallery);
       })();
     </script>
   {% endif %}

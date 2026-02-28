@@ -109,6 +109,23 @@ def parse_heading4_date(text: str) -> tuple[bool, str]:
     return True, value
 
 
+def parse_heading4_video(text: str) -> tuple[bool, str]:
+    normalized = normalize_section(text)
+    if not normalized.startswith("видео"):
+        return False, ""
+    value = text[len("Видео"):].strip(" :.-")
+    return True, normalize_video_url(value)
+
+
+def normalize_video_url(value: str) -> str:
+    if not value:
+        return ""
+    iframe_match = re.search(r'src\\s*=\\s*["\\\']([^"\\\']+)["\\\']', value, flags=re.IGNORECASE)
+    if iframe_match:
+        return iframe_match.group(1).strip()
+    return value.strip()
+
+
 def build_items_for_section(section_title: str, section_slug: str, paragraphs: list[RawParagraph]) -> list[SectionItem]:
     items: list[SectionItem] = []
     current_title: str | None = None
@@ -116,9 +133,11 @@ def build_items_for_section(section_title: str, section_slug: str, paragraphs: l
     current_images: list[str] = []
     current_date = ""
     waiting_date_value = False
+    waiting_video_value = False
 
     def flush_item() -> None:
         nonlocal current_title, current_body, current_images, current_date, waiting_date_value
+        nonlocal waiting_video_value
         if not current_title:
             return
         body = "\n\n".join(part for part in current_body if part).strip()
@@ -140,6 +159,7 @@ def build_items_for_section(section_title: str, section_slug: str, paragraphs: l
         current_images = []
         current_date = ""
         waiting_date_value = False
+        waiting_video_value = False
 
     for paragraph in paragraphs:
         if paragraph.style in {"3", "Heading3"} and paragraph.text:
@@ -156,6 +176,14 @@ def build_items_for_section(section_title: str, section_slug: str, paragraphs: l
                 else:
                     waiting_date_value = True
                 continue
+            is_video_heading, inline_video = parse_heading4_video(paragraph.text)
+            if is_video_heading:
+                if inline_video:
+                    current_body.append(f"<div class=\"news-video\"><iframe src=\"{inline_video}\"></iframe></div>")
+                    waiting_video_value = False
+                else:
+                    waiting_video_value = True
+                continue
 
         if current_title is None:
             # Fallback: section without heading-3 still forms a single item.
@@ -164,6 +192,13 @@ def build_items_for_section(section_title: str, section_slug: str, paragraphs: l
         if waiting_date_value and paragraph.text:
             current_date = paragraph.text
             waiting_date_value = False
+            continue
+
+        if waiting_video_value and paragraph.text:
+            current_body.append(
+                f"<div class=\"news-video\"><iframe src=\"{normalize_video_url(paragraph.text)}\"></iframe></div>"
+            )
+            waiting_video_value = False
             continue
 
         if paragraph.text:
@@ -445,16 +480,26 @@ markdown: kramdown
         menu_lines.append(f'  - label: "{shell_quote(section.title)}"\n    url: /{section.slug}/')
     write_text(OUTPUT_ROOT / "_data/menu.yml", "\n".join(menu_lines) + "\n")
 
-    css = """body {
+    css = """:root {
+  --text: #111;
+  --muted: #666;
+  --line: #ddd;
+  --link: #005ea2;
+  --space-sm: 8px;
+  --space-md: 14px;
+  --space-lg: 20px;
+}
+
+body {
   margin: 0;
   font-family: Arial, sans-serif;
-  color: #111;
+  color: var(--text);
   background: #f7f7f7;
 }
 
 .site-header {
   background: #fff;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--line);
 }
 
 .site-header__inner,
@@ -465,7 +510,7 @@ markdown: kramdown
 }
 
 .site-title {
-  margin: 0 0 12px;
+  margin: 0;
 }
 
 .site-title a {
@@ -476,55 +521,80 @@ markdown: kramdown
 .site-title__link {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-md);
 }
 
 .site-title__logo {
-  width: 84px;
-  height: 84px;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
   flex: 0 0 auto;
   align-self: flex-start;
 }
 
 .site-title__text {
+  max-width: 760px;
   line-height: 1.2;
 }
 
 .site-title__main {
   display: block;
+  font-size: 1.24rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
 }
 
 .site-title__sub {
   display: block;
-  margin-top: 4px;
-  font-size: 0.82em;
-  color: #666;
-  line-height: 1.25;
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.3;
 }
 
 .menu {
   display: flex;
   gap: 12px;
-  padding: 0;
-  margin: 0;
+  padding: var(--space-md) 0 0;
+  margin-top: var(--space-md);
+  border-top: 1px solid var(--line);
+  margin-bottom: 0;
+  margin-left: 0;
+  margin-right: 0;
   list-style: none;
   flex-wrap: wrap;
 }
 
 .menu a {
   text-decoration: none;
-  color: #005ea2;
+  color: var(--link);
   font-weight: 700;
+  padding: 4px 0;
 }
 
 .menu a.active {
-  color: #111;
+  color: var(--text);
+}
+
+.breadcrumbs {
+  margin-top: var(--space-sm);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.breadcrumbs a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.breadcrumbs__sep {
+  margin: 0 6px;
+  color: var(--muted);
 }
 
 .site-footer {
-  margin-top: 20px;
-  border-top: 1px solid #ddd;
+  margin-top: var(--space-lg);
+  border-top: 1px solid var(--line);
   background: #fff;
 }
 
@@ -533,7 +603,7 @@ markdown: kramdown
   margin: 0 auto;
   padding: 14px 16px 20px;
   font-size: 14px;
-  color: #444;
+  color: var(--muted);
   line-height: 1.35;
 }
 
@@ -544,10 +614,6 @@ markdown: kramdown
 }
 
 .list-item {
-  display: grid;
-  grid-template-columns: 1fr 260px;
-  gap: 14px;
-  align-items: start;
   border-bottom: 1px solid #e5e5e5;
   padding: 14px 0;
 }
@@ -556,8 +622,34 @@ markdown: kramdown
   border-bottom: 0;
 }
 
+.list-item__grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 14px;
+  align-items: start;
+}
+
 .list-item h3 {
   margin: 0 0 8px;
+}
+
+.list-item__content h3 {
+  color: var(--text);
+}
+
+.list-item__link {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+
+.list-item__link:visited {
+  color: inherit;
+}
+
+.list-item__link:hover .list-item__content h3,
+.list-item__link:focus-visible .list-item__content h3 {
+  color: #6a45d1;
 }
 
 .list-item p {
@@ -584,11 +676,30 @@ markdown: kramdown
   text-align: left;
 }
 
-.list-item__image img {
-  width: 100%;
+.list-item__image {
+  position: relative;
+  overflow: hidden;
   height: 160px;
-  object-fit: cover;
   border: 1px solid #ddd;
+  background: #fff;
+}
+
+.list-item__image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+  display: block;
+  transform-origin: center center;
+  transition: transform 560ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+
+.list-item__link:hover .list-item__image img,
+.list-item__link:focus-visible .list-item__image img {
+  transform: scale(1.04);
 }
 
 .home-preview {
@@ -605,6 +716,7 @@ markdown: kramdown
   border: 1px solid #ddd;
   background: #fff;
   padding: 10px;
+  overflow: hidden;
 }
 
 .home-preview__tile-link {
@@ -613,12 +725,25 @@ markdown: kramdown
   display: block;
 }
 
-.home-preview__image {
-  width: 100%;
+.home-preview__media {
+  position: relative;
   height: 160px;
-  object-fit: cover;
+  overflow: hidden;
   border: 1px solid #ddd;
   background: #fafafa;
+}
+
+.home-preview__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+  display: block;
+  transform-origin: center center;
+  transition: transform 560ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
 }
 
 .home-preview__date {
@@ -630,6 +755,17 @@ markdown: kramdown
 .home-preview__title {
   margin-top: 6px;
   font-weight: 700;
+  transition: color 260ms ease;
+}
+
+.home-preview__tile-link:hover .home-preview__image,
+.home-preview__tile-link:focus-visible .home-preview__image {
+  transform: scale(1.05);
+}
+
+.home-preview__tile-link:hover .home-preview__title,
+.home-preview__tile-link:focus-visible .home-preview__title {
+  color: #6a45d1;
 }
 
 .pagination {
@@ -662,48 +798,161 @@ markdown: kramdown
 
 .news-gallery {
   margin-top: 18px;
+  position: relative;
+  padding: 12px 0;
 }
 
 .news-gallery__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: 10px;
 }
 
-.news-gallery__controls {
-  display: flex;
-  gap: 8px;
-}
-
-.news-gallery__controls button {
-  border: 1px solid #bbb;
+.news-gallery__viewport {
+  position: relative;
+  height: 360px;
+  overflow: hidden;
+  border: 1px solid #ddd;
   background: #fff;
-  padding: 6px 10px;
-  cursor: pointer;
 }
 
 .news-gallery__track {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  padding-bottom: 6px;
+  position: relative;
+  height: 100%;
 }
 
 .news-gallery__item {
-  flex: 0 0 240px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 62%;
+  max-width: 640px;
+  transform: translate(-50%, -50%) scale(0.72);
+  opacity: 0;
+  transition: transform 0.32s ease, opacity 0.32s ease;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .news-gallery__item img {
   width: 100%;
-  height: 150px;
+  height: 320px;
   object-fit: cover;
   border: 1px solid #ddd;
+  background: #fff;
+}
+
+.news-gallery__item.is-portrait {
+  width: 46%;
+  max-width: 420px;
+}
+
+.news-gallery__item.is-portrait img {
+  object-fit: contain;
+  background: #fff;
+}
+
+.news-gallery__item:first-child {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.news-gallery__item.is-current {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  z-index: 3;
+  pointer-events: auto;
+}
+
+.news-gallery__item.is-prev {
+  opacity: 0.35;
+  transform: translate(-120%, -50%) scale(0.86);
+  z-index: 2;
+}
+
+.news-gallery__item.is-next {
+  opacity: 0.35;
+  transform: translate(20%, -50%) scale(0.86);
+  z-index: 2;
+}
+
+.news-gallery__nav {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 26%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  z-index: 4;
+}
+
+.news-gallery__nav::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 42px;
+  height: 42px;
+  border-top: 3px solid rgba(0, 0, 0, 0.45);
+  border-right: 3px solid rgba(0, 0, 0, 0.45);
+  transform-origin: center;
+}
+
+.news-gallery__nav--prev {
+  left: 0;
+}
+
+.news-gallery__nav--prev::before {
+  left: 16px;
+  transform: translateY(-50%) rotate(-135deg);
+}
+
+.news-gallery__nav--next {
+  right: 0;
+}
+
+.news-gallery__nav--next::before {
+  right: 16px;
+  transform: translateY(-50%) rotate(45deg);
+}
+
+.news-video {
+  position: relative;
+  padding-top: 56.25%;
+  margin-bottom: 16px;
+  background: #000;
+}
+
+.news-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
 
 @media (max-width: 720px) {
+  .site-title__logo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .site-title__main {
+    font-size: 1.08rem;
+  }
+
+  .site-title__sub {
+    font-size: 0.8rem;
+  }
+
   .list-item {
+    padding: 12px 0;
+  }
+
+  .list-item__grid {
     grid-template-columns: 1fr;
   }
 
@@ -715,8 +964,24 @@ markdown: kramdown
     grid-template-columns: 1fr;
   }
 
+  .news-gallery__viewport {
+    height: 300px;
+  }
+
   .news-gallery__item {
-    flex-basis: 200px;
+    width: 76%;
+  }
+
+  .news-gallery__item img {
+    height: 260px;
+  }
+
+  .news-gallery__item.is-prev {
+    transform: translate(-112%, -50%) scale(0.84);
+  }
+
+  .news-gallery__item.is-next {
+    transform: translate(12%, -50%) scale(0.84);
   }
 }
 """
@@ -759,6 +1024,29 @@ markdown: kramdown
           {% endfor %}
         </ul>
       </nav>
+      {% if page.url != '/' %}
+        {% assign breadcrumb_section = nil %}
+        {% for item in site.data.menu %}
+          {% if page.url == item.url %}
+            {% assign breadcrumb_section = item %}
+            {% break %}
+          {% elsif item.url != '/' and page.url contains item.url %}
+            {% assign breadcrumb_section = item %}
+            {% break %}
+          {% endif %}
+        {% endfor %}
+        <div class=\"breadcrumbs\">
+          {% if breadcrumb_section %}
+            <a href=\"{{ breadcrumb_section.url | relative_url }}\">{{ breadcrumb_section.label }}</a>
+            {% if page.url != breadcrumb_section.url %}
+              <span class=\"breadcrumbs__sep\">&gt;</span>
+              <a href=\"{{ page.url | relative_url }}\">{{ page.title }}</a>
+            {% endif %}
+          {% else %}
+            <a href=\"{{ page.url | relative_url }}\">{{ page.title }}</a>
+          {% endif %}
+        </div>
+      {% endif %}
     </div>
   </header>
   <main class=\"page-content\">
@@ -800,7 +1088,9 @@ layout: base
           <article class=\"home-preview__tile\">
             {% if item.url and item.url != '' %}<a class=\"home-preview__tile-link\" href=\"{{ item.url | relative_url }}\">{% endif %}
               {% if item.image and item.image != '' %}
-                <img class=\"home-preview__image\" src=\"{{ item.image | relative_url }}\" alt=\"{{ item.title }}\">
+                <div class=\"home-preview__media\">
+                  <img class=\"home-preview__image\" src=\"{{ item.image | relative_url }}\" alt=\"{{ item.title }}\">
+                </div>
               {% endif %}
               {% if item.date and item.date != '' %}<div class=\"home-preview__date\">{{ item.date }}</div>{% endif %}
               <div class=\"home-preview__title\">{{ item.title }}</div>
@@ -829,26 +1119,30 @@ layout: base
 
   {% for item in page.items %}
     <article class=\"list-item\">
-      <div class=\"{% if has_dates %}list-item--with-date{% endif %}\">
-        {% if has_dates %}
-          <div class=\"list-item__date\">{{ item.date }}</div>
-        {% endif %}
-        <div class=\"list-item__content\">
-          {% if item.url and item.url != '' %}
-            <h3><a href=\"{{ item.url | relative_url }}\">{{ item.title }}</a></h3>
-          {% else %}
+      {% if item.url and item.url != '' %}<a class=\"list-item__link\" href=\"{{ item.url | relative_url }}\">{% endif %}
+      <div class=\"list-item__grid\">
+        <div class=\"{% if has_dates %}list-item--with-date{% endif %}\">
+          {% if has_dates %}
+            <div class=\"list-item__date\">{{ item.date }}</div>
+          {% endif %}
+          <div class=\"list-item__content\">
             <h3>{{ item.title }}</h3>
-          {% endif %}
-          {% if item.image == '' or item.image == nil %}
-            {% if item.excerpt != '' and item.excerpt != nil %}<p>{{ item.excerpt }}</p>{% endif %}
-          {% endif %}
+            {% assign show_excerpt = false %}
+            {% if item.url == '' or item.url == nil %}
+              {% assign show_excerpt = true %}
+            {% elsif item.image == '' or item.image == nil %}
+              {% assign show_excerpt = true %}
+            {% endif %}
+            {% if show_excerpt and item.excerpt != '' and item.excerpt != nil %}<p>{{ item.excerpt }}</p>{% endif %}
+          </div>
         </div>
+        {% if item.image and item.image != '' %}
+          <div class=\"list-item__image\">
+            <img src=\"{{ item.image | relative_url }}\" alt=\"{{ item.title }}\">
+          </div>
+        {% endif %}
       </div>
-      {% if item.image and item.image != '' %}
-        <div class=\"list-item__image\">
-          <img src=\"{{ item.image | relative_url }}\" alt=\"{{ item.title }}\">
-        </div>
-      {% endif %}
+      {% if item.url and item.url != '' %}</a>{% endif %}
     </article>
   {% endfor %}
 
@@ -885,29 +1179,71 @@ layout: base
     <section class=\"news-gallery\">
       <div class=\"news-gallery__header\">
         <strong>Галерея</strong>
-        <div class=\"news-gallery__controls\">
-          <button type=\"button\" class=\"news-gallery__prev\" aria-label=\"Прокрутить влево\">&lt;</button>
-          <button type=\"button\" class=\"news-gallery__next\" aria-label=\"Прокрутить вправо\">&gt;</button>
-        </div>
       </div>
-      <div class=\"news-gallery__track\">
-        {% for image in gallery_images %}
-          <a class=\"news-gallery__item\" href=\"{{ image | relative_url }}\" target=\"_blank\" rel=\"noopener\">
-            <img src=\"{{ image | relative_url }}\" alt=\"{{ page.title }} {{ forloop.index }}\">
-          </a>
-        {% endfor %}
+      <div class=\"news-gallery__viewport\">
+        <button type=\"button\" class=\"news-gallery__nav news-gallery__nav--prev\" aria-label=\"Предыдущее изображение\"></button>
+        <div class=\"news-gallery__track\">
+          {% for image in gallery_images %}
+            <a class=\"news-gallery__item\" data-index=\"{{ forloop.index0 }}\" href=\"{{ image | relative_url }}\" target=\"_blank\" rel=\"noopener\">
+              <img src=\"{{ image | relative_url }}\" alt=\"{{ page.title }} {{ forloop.index }}\">
+            </a>
+          {% endfor %}
+        </div>
+        <button type=\"button\" class=\"news-gallery__nav news-gallery__nav--next\" aria-label=\"Следующее изображение\"></button>
       </div>
     </section>
     <script>
       (function () {
-        var gallery = document.currentScript.closest('.news-gallery');
-        if (!gallery) return;
-        var track = gallery.querySelector('.news-gallery__track');
-        var prev = gallery.querySelector('.news-gallery__prev');
-        var next = gallery.querySelector('.news-gallery__next');
-        var step = 260;
-        prev.addEventListener('click', function () { track.scrollBy({ left: -step, behavior: 'smooth' }); });
-        next.addEventListener('click', function () { track.scrollBy({ left: step, behavior: 'smooth' }); });
+        function mod(n, m) {
+          return ((n % m) + m) % m;
+        }
+
+        function initGallery(gallery) {
+          if (!gallery || gallery.dataset.carouselReady === '1') return;
+          var slides = Array.prototype.slice.call(gallery.querySelectorAll('.news-gallery__item'));
+          var prev = gallery.querySelector('.news-gallery__nav--prev');
+          var next = gallery.querySelector('.news-gallery__nav--next');
+          if (!slides.length || !prev || !next) return;
+          gallery.dataset.carouselReady = '1';
+          var current = 0;
+
+          function render() {
+          var prevIndex = mod(current - 1, slides.length);
+          var nextIndex = mod(current + 1, slides.length);
+          slides.forEach(function (slide, index) {
+            slide.classList.remove('is-prev', 'is-current', 'is-next');
+            if (index === current) slide.classList.add('is-current');
+              else if (index === prevIndex) slide.classList.add('is-prev');
+            else if (index === nextIndex) slide.classList.add('is-next');
+          });
+        }
+
+          // Mark portrait images so CSS switches to contained mode with white side fields.
+          slides.forEach(function (slide) {
+            var img = slide.querySelector('img');
+            if (!img) return;
+            function setOrientation() {
+              if (img.naturalHeight > img.naturalWidth) slide.classList.add('is-portrait');
+            }
+            if (img.complete) setOrientation();
+            else img.addEventListener('load', setOrientation, { once: true });
+          });
+
+          prev.addEventListener('click', function () {
+            current = mod(current - 1, slides.length);
+            render();
+          });
+
+          next.addEventListener('click', function () {
+            current = mod(current + 1, slides.length);
+            render();
+          });
+
+          render();
+        }
+
+        var galleries = Array.prototype.slice.call(document.querySelectorAll('.news-gallery'));
+        galleries.forEach(initGallery);
       })();
     </script>
   {% endif %}

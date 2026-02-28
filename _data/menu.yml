@@ -1,6 +1,16 @@
+  - label: "Информация"
+    url: /informatsiya/
   - label: "Новости"
     url: /news/
-  - label: "Основные сведения"
-    url: /osnovnye-svedeniya/
-  - label: "Творческие объединения"
-    url: /tvorcheskie-obedineniya/
+  - label: "О центре"
+    url: /o-tsentre/
+  - label: "Педагогический состав"
+    url: /pedagogicheskiy-sostav/
+  - label: "Фольклорная студия «Истоки»"
+    url: /folklornaya-studiya-istoki/
+  - label: "Этнографический музей «Русский быт»"
+    url: /etnograficheskiy-muzey-russkiy-byt/
+  - label: "Профильные смены"
+    url: /profilnye-smeny/
+  - label: "Наши проекты"
+    url: /nashi-proekty/
